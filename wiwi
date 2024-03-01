@@ -1,0 +1,764 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <windows.h>
+#define _CRT_SECURE_NO_WARNINGS
+
+void MENU();
+void input();
+void show();
+void inFile(const char* path);
+void outFile(const char* path);
+void search();
+void edit();
+void red(int i);
+void info(int i);
+void sheet();
+void up();
+void details();
+void delet();
+void DATA();
+void sort();
+void elementSort(int i);
+
+struct kurs
+{
+	float dollarBuy;
+	float dollarSell;
+	float euroBuy;
+	float euroSell;
+};
+struct vklad1
+{
+	float depozyt3;
+	float depozyt6;
+	float depozyt12;
+};
+struct vklad2
+{
+	float percent;
+	int limit;
+};
+struct BANK
+{
+	char name[20];
+	char city[50];
+	char address[100];
+	char status[20];
+	char code[20];
+	char ID[20];
+	vklad1 depozyt;
+	vklad2 credyt;
+	kurs valuta;
+}*bank = NULL;
+
+int N = 0;
+
+int main()
+{
+	SetConsoleCP(1251);
+	SetConsoleOutputCP(1251);
+	MENU();
+}
+
+void MENU()
+{
+	outFile("d:\\text\\txt.bin");
+	printf("---- << ГОЛОВНЕ МЕНЮ >> ----");
+	printf("\n----------------------------");
+	printf("\n  1. додати новий запис");
+	printf("\n  2. список усіх банків");
+	printf("\n  3. пошук за параметрами");
+	printf("\n  4. сортувати за параметрами");
+	printf("\n  5. редагувати дані");
+	printf("\n  6. видалити запис");
+	printf("\n  0. вихід");
+	printf("\n----------------------------");
+	printf("\n-> ");
+
+	int menu;
+	scanf_s("%d", &menu);
+	system("cls");
+	switch (menu)
+	{
+	case 1: input(); break;
+	case 2: show(); break;
+	case 3: search(); break;
+	case 4: sort(); break;
+	case 5: edit(); break;
+	case 6: delet(); break;
+	case 0: break;
+	}
+}
+void input()
+{
+	int count;
+	printf("введіть кількість записів: "); scanf_s("%d", &count);
+	if (N == 0)
+		bank = (BANK*)malloc(count * sizeof(BANK));
+	else
+	{
+		bank = (BANK*)realloc(bank, (N + count) * sizeof(BANK));
+	}
+
+	for (int i = N; i < N + count; i++)
+	{
+		printf("\nБАНК %d", i + 1);
+		printf("\nназва: ");
+		do {
+			gets_s(bank[i].name);
+		} while (strlen(bank[i].name) == 0);
+		printf("місто: ");
+		scanf_s("%s", bank[i].city, sizeof(bank[i].city));
+		printf("адреса: ");
+		do {
+			gets_s(bank[i].address);
+		} while (strlen(bank[i].address) == 0);
+		printf("статус: ");
+		scanf_s("%s", bank[i].status, sizeof(bank[i].status));
+		printf("код за ЄДРПОУ: ");
+		scanf_s("%s", bank[i].code, sizeof(bank[i].code));
+		printf("код ID НБУ: ");
+		scanf_s("%s", bank[i].ID, sizeof(bank[i].ID));
+
+		printf("\nДЕПОЗИТ");
+		printf("\nвідсоток вкладу на 3 місяці: ");
+		scanf_s("%f", &bank[i].depozyt.depozyt3);
+		printf("відсоток вкладу на 6 місяців: ");
+		scanf_s("%f", &bank[i].depozyt.depozyt6);
+		printf("відсоток вкладу на 12 місяців: ");
+		scanf_s("%f", &bank[i].depozyt.depozyt12);
+
+		printf("\nКРЕДИТ");
+		printf("\nпроцентна ставка на рік: ");
+		scanf_s("%f", &bank[i].credyt.percent);
+		printf("ліміти кредиту до (тис. грн.): ");
+		scanf_s("%d", &bank[i].credyt.limit);
+
+		printf("\nКУРС ВАЛЮТ");
+		printf("\n-> ДОЛАР");
+		printf("\nкупівля: ");
+		scanf_s("%f", &bank[i].valuta.dollarBuy);
+		printf("продаж: ");
+		scanf_s("%f", &bank[i].valuta.dollarSell);
+		printf("\n-> ЄВРО");
+		printf("\nкупівля: ");
+		scanf_s("%f", &bank[i].valuta.euroBuy);
+		printf("продаж: ");
+		scanf_s("%f", &bank[i].valuta.euroSell);
+	}
+	N += count;
+	inFile("d:\\text\\txt.bin");
+	system("pause");
+	system("cls");
+	MENU();
+}
+void show()
+{
+	system("cls");
+	printf("\n\n%90s", "СПИСОК ВСІХ БАНКІВ");
+	sheet();
+	DATA();
+	details();
+	system("cls");
+	MENU();
+}
+void inFile(const char* path)
+{
+	FILE* f = fopen(path, "wb");
+	for (int i = 0; i < N; i++)
+		fwrite(&bank[i], sizeof(BANK), 1, f);
+	fclose(f);
+}
+void outFile(const char* path)
+{
+	FILE* f;
+	f = fopen(path, "rb");
+	if (f == NULL)
+		inFile(path);
+	else
+	{
+		fseek(f, 0, SEEK_END);
+		N = ftell(f) / sizeof(BANK);
+		rewind(f);
+		bank = (BANK*)malloc(N * sizeof(BANK));
+		fread(bank, sizeof(BANK), N, f);
+		fclose(f);
+	}
+}
+void search()
+{
+	system("cls");
+	sheet();
+	DATA();
+	printf("\n\n           ---- << ПОШУК >> ----");
+	printf("\n---------------------------------------------");
+	printf("\n  1. за назвою");
+	printf("\n  2. за статусом");
+	printf("\n  3. за містом");
+	printf("\n  4. порівняти курс валют банків");
+	printf("\n  5. максимальний відсоток вкладу на 3 міс.");
+	printf("\n  6. максимальний відсоток вкладу на 6 міс.");
+	printf("\n  7. максимальний відсоток вкладу на 12 міс.");
+	printf("\n  8. мінімальна ставка на кредит");
+	printf("\n  0. головне меню");
+	printf("\n---------------------------------------------");
+	printf("\n-> ");
+	int menuSearch;
+	float max = 0, min = 100;
+	scanf_s("%d", &menuSearch);
+	switch (menuSearch)
+	{
+	case 1:
+		system("cls");
+		sheet();
+		char bankName[20];
+		printf("\n\tвведіть назву банку: "); scanf_s("%s", bankName, sizeof(bankName));
+		system("cls");
+		up();
+		for (int i = 0; i < N; i++)
+		{
+			if (strstr(bankName, bank[i].name))
+			{
+				if (i < 9)
+				{
+					printf("\n\t|%d. %-15s |%-15s|%-25s|%-15s|%-10s|%-8.1f|%-8.1f|%6.2f$|%5.2f$|%6.2f€|%5.2f€|", i + 1, bank[i].name, bank[i].city, bank[i].address, bank[i].status, bank[i].code,
+						bank[i].depozyt.depozyt12, bank[i].credyt.percent, bank[i].valuta.dollarBuy, bank[i].valuta.dollarSell, bank[i].valuta.euroBuy, bank[i].valuta.euroSell);
+					printf("\n\t|___________________|_______________|_________________________|_______________|__________|________|________|_______|______|_______|______|");
+				}
+				else
+				{
+					printf("\n\t|%d. %-15s|%-15s|%-25s|%-15s|%-10s|%-8.1f|%-8.1f|%6.2f$|%5.2f$|%6.2f€|%5.2f€|", i + 1, bank[i].name, bank[i].city, bank[i].address, bank[i].status, bank[i].code,
+						bank[i].depozyt.depozyt12, bank[i].credyt.percent, bank[i].valuta.dollarBuy, bank[i].valuta.dollarSell, bank[i].valuta.euroBuy, bank[i].valuta.euroSell);
+					printf("\n\t|___________________|_______________|_________________________|_______________|__________|________|________|_______|______|_______|______|");
+				}
+			}
+		}
+		details();
+		search();
+		break;
+	case 2:
+		system("cls");
+		sheet();
+		char bankStatus[20];
+		printf("\n\tвведіть статус банку: "); scanf_s("%s", bankStatus, sizeof(bankStatus));
+		system("cls");
+		up();
+		for (int i = 0; i < N; i++)
+		{
+			if (strstr(bankStatus, bank[i].status))
+			{
+				if (i < 9)
+				{
+					printf("\n\t|%d. %-15s |%-15s|%-25s|%-15s|%-10s|%-8.1f|%-8.1f|%6.2f$|%5.2f$|%6.2f€|%5.2f€|", i + 1, bank[i].name, bank[i].city, bank[i].address, bank[i].status, bank[i].code,
+						bank[i].depozyt.depozyt12, bank[i].credyt.percent, bank[i].valuta.dollarBuy, bank[i].valuta.dollarSell, bank[i].valuta.euroBuy, bank[i].valuta.euroSell);
+					printf("\n\t|___________________|_______________|_________________________|_______________|__________|________|________|_______|______|_______|______|");
+				}
+				else
+				{
+					printf("\n\t|%d. %-15s|%-15s|%-25s|%-15s|%-10s|%-8.1f|%-8.1f|%6.2f$|%5.2f$|%6.2f€|%5.2f€|", i + 1, bank[i].name, bank[i].city, bank[i].address, bank[i].status, bank[i].code,
+						bank[i].depozyt.depozyt12, bank[i].credyt.percent, bank[i].valuta.dollarBuy, bank[i].valuta.dollarSell, bank[i].valuta.euroBuy, bank[i].valuta.euroSell);
+					printf("\n\t|___________________|_______________|_________________________|_______________|__________|________|________|_______|______|_______|______|");
+				}
+			}
+		}
+		details();
+		search();
+		break;
+	case 3:
+		system("cls");
+		sheet();
+		char bankCity[20];
+		printf("\n\tвведіть місто: "); scanf_s("%s", bankCity, sizeof(bankCity));
+		system("cls");
+		up();
+		for (int i = 0; i < N; i++)
+		{
+			if (strstr(bankCity, bank[i].city))
+			{
+				if (i < 9)
+				{
+					printf("\n\t|%d. %-15s |%-15s|%-25s|%-15s|%-10s|%-8.1f|%-8.1f|%6.2f$|%5.2f$|%6.2f€|%5.2f€|", i + 1, bank[i].name, bank[i].city, bank[i].address, bank[i].status, bank[i].code,
+						bank[i].depozyt.depozyt12, bank[i].credyt.percent, bank[i].valuta.dollarBuy, bank[i].valuta.dollarSell, bank[i].valuta.euroBuy, bank[i].valuta.euroSell);
+					printf("\n\t|___________________|_______________|_________________________|_______________|__________|________|________|_______|______|_______|______|");
+				}
+				else
+				{
+					printf("\n\t|%d. %-15s|%-15s|%-25s|%-15s|%-10s|%-8.1f|%-8.1f|%6.2f$|%5.2f$|%6.2f€|%5.2f€|", i + 1, bank[i].name, bank[i].city, bank[i].address, bank[i].status, bank[i].code,
+						bank[i].depozyt.depozyt12, bank[i].credyt.percent, bank[i].valuta.dollarBuy, bank[i].valuta.dollarSell, bank[i].valuta.euroBuy, bank[i].valuta.euroSell);
+					printf("\n\t|___________________|_______________|_________________________|_______________|__________|________|________|_______|______|_______|______|");
+				}
+			}
+		}
+		details();
+		search();
+		break;
+	case 4:
+		system("cls");
+		printf("\n\t__________________________________________________");
+		printf("\n\t|%-18s|%-14s|%-14s|", " ", "ДОЛАР", "ЄВРО");
+		printf("\n\t|%-18s|______________|______________|", "БАНК");
+		printf("\n\t|%-18s|%-7s|%-6s|%-7s|%-6s|", " ", "купівля", "продаж", "купівля", "продаж");
+		printf("\n\t|__________________|_______|______|_______|______|");
+		for (int i = 0; i < N; i++)
+		{
+			int j;
+			for (j = 0; j < i; j++)
+			{
+				if (i != j && strcmp(bank[i].name, bank[j].name) == 0) break;
+			}
+			if (i == j)
+			{
+				printf("\n\t|%-18s|%6.2f$|%5.2f$|%6.2f€|%5.2f€|", bank[i].name, bank[i].valuta.dollarBuy,
+					bank[i].valuta.dollarSell, bank[i].valuta.euroBuy, bank[i].valuta.euroSell);
+				printf("\n\t|__________________|_______|______|_______|______|");
+			}
+		}
+		DATA();
+		printf("\n\n");
+		system("pause");
+		search();
+		break;
+	case 5:
+		int tmp1;
+		for (int i = 0; i < N; i++)
+		{
+			if (bank[i].depozyt.depozyt3 > max)
+			{
+				max = bank[i].depozyt.depozyt3;
+				tmp1 = i;
+			}
+		}
+		printf("\n\nБАНК %d.................................", tmp1 + 1);
+		printf("\nназва банку: %s ", bank[tmp1].name);
+		printf("\nстатус: %s ", bank[tmp1].status);
+		printf("\nдепозит на 3 місяці: %.1f ", bank[tmp1].depozyt.depozyt3);
+		printf("\n.......................................\n\n");
+		system("pause");
+		search();
+		break;
+	case 6:
+		int tmp2;
+		for (int i = 0; i < N; i++)
+		{
+			if (bank[i].depozyt.depozyt6 > max)
+			{
+				max = bank[i].depozyt.depozyt6;
+				tmp2 = i;
+			}
+		}
+		printf("\n\nБАНК %d.................................", tmp2 + 1);
+		printf("\nназва банку: %s ", bank[tmp2].name);
+		printf("\nстатус: %s ", bank[tmp2].status);
+		printf("\nдепозит на 6 місяців: %.1f ", bank[tmp2].depozyt.depozyt6);
+		printf("\n.......................................\n\n");
+		system("pause");
+		search();
+		break;
+	case 7:
+		int tmp3;
+		for (int i = 0; i < N; i++)
+		{
+			if (bank[i].depozyt.depozyt12 > max)
+			{
+				max = bank[i].depozyt.depozyt12;
+				tmp3 = i;
+			}
+		}
+		printf("\n\nБАНК %d.................................", tmp3 + 1);
+		printf("\nназва банку: %s ", bank[tmp3].name);
+		printf("\nстатус: %s ", bank[tmp3].status);
+		printf("\nдепозит на 12 місяців: %.1f ", bank[tmp3].depozyt.depozyt12);
+		printf("\n.......................................\n\n");
+		system("pause");
+		search();
+		break;
+	case 8:
+		int tmp4;
+		for (int i = 0; i < N; i++)
+		{
+			if (bank[i].credyt.percent < min)
+			{
+				min = bank[i].credyt.percent;
+				tmp4 = i;
+			}
+		}
+		printf("\n\nБАНК %d.................................", tmp4 + 1);
+		printf("\nназва банку: %s ", bank[tmp4].name);
+		printf("\nстатус: %s ", bank[tmp4].status);
+		printf("\nпроцентна ставка на рік: %.1f ", bank[tmp4].credyt.percent);
+		printf("\n.......................................\n\n");
+		system("pause");
+		search();
+		break;
+	case 0:
+		system("cls");
+		MENU();
+		break;
+	}
+}
+void edit()
+{
+	system("cls");
+	int num;
+	sheet();
+	DATA();
+	printf("\n\tвведіть номер банку для редагування (0 - назад) -> "); scanf_s("%d", &num);
+	if (num == 0)
+	{
+		system("cls");
+		MENU();
+	}
+	else
+	{
+		for (int i = 0; i < N; i++)
+		{
+			if (num == i + 1)
+			{
+				system("cls");
+				red(i);
+				inFile("d:\\text\\txt.bin");
+				int answer;
+				printf("\nчи хочете ще раз редагувати цей банк? (1 - так, 0 - ні) -> ");
+				scanf_s("%d", &answer);
+				while (1)
+				{
+					if (answer == 1)
+					{
+						system("cls");
+						red(i);
+						inFile("d:\\text\\txt.bin");
+						printf("\nчи хочете ще раз редагувати цей банк? (1 - так, 0 - ні) -> ");
+						scanf_s("%d", &answer);
+					}
+					else break;
+				}
+				info(i);
+				system("pause");
+			}
+		}
+	}
+	system("cls");
+	MENU();
+}
+void red(int i)
+{
+	printf("БАНК %d.......................................", i + 1);
+	printf("\n1. назва: %s ", bank[i].name);
+	printf("\n2. місто: %s ", bank[i].city);
+	printf("\n3. адреса: %s ", bank[i].address);
+	printf("\n4. статус: %s ", bank[i].status);
+	printf("\n5. код за ЄДРПОУ: %s", bank[i].code);
+	printf("\n6. код ID НБУ: %s", bank[i].ID);
+	printf("\n7. ДЕПОЗИТ");
+	printf("\n8. КРЕДИТ");
+	printf("\n9. КУРС ВАЛЮТ");
+	printf("\n0. вихід");
+	printf("\n.......................................\n\n");
+
+	int tmp;
+	printf("який рядок редагувати: "); scanf_s("%d", &tmp);
+
+	switch (tmp)
+	{
+	case 1: printf("\nвведіть нові дані: "); do {
+		gets_s(bank[i].name);
+	} while (strlen(bank[i].name) == 0); break;
+	case 2: printf("\nвведіть нові дані: "); scanf_s("%s", bank[i].city, sizeof(bank[i].city)); break;
+	case 3:
+		printf("\nвведіть нові дані: ");
+		do {
+			gets_s(bank[i].address);
+		} while (strlen(bank[i].address) == 0); break;
+	case 4: printf("\nвведіть нові дані: "); scanf_s("%s", bank[i].status, sizeof(bank[i].status)); break;
+	case 5: printf("\nвведіть нові дані: "); scanf_s("%s", bank[i].code, sizeof(bank[i].code)); break;
+	case 6: printf("\nвведіть нові дані: "); scanf_s("%s", bank[i].ID, sizeof(bank[i].ID)); break;
+	case 7:
+		system("cls");
+		int answ1;
+		printf("ДЕПОЗИТ");
+		printf("\n1. на 3 місяці: %.1f ", bank[i].depozyt.depozyt3);
+		printf("\n2. на 6 місяці: %.1f ", bank[i].depozyt.depozyt6);
+		printf("\n3. на 12 місяці: %.1f", bank[i].depozyt.depozyt12);
+		printf("\n0. повернутись ");
+		printf("\nякий пункт хочете змінити? -> "); scanf_s("%d", &answ1);
+
+		switch (answ1)
+		{
+		case 1: printf("введіть нові дані: "); scanf_s("%f", &bank[i].depozyt.depozyt3); break;
+		case 2: printf("введіть нові дані: "); scanf_s("%f", &bank[i].depozyt.depozyt6); break;
+		case 3: printf("введіть нові дані: "); scanf_s("%f", &bank[i].depozyt.depozyt12); break;
+		case 0:
+			system("cls");
+			red(i); break;
+		} break;
+	case 8:
+		system("cls");
+		int answ3;
+		printf("КРЕДИТ");
+		printf("\n1. процентна ставка на рік: %.1f ", bank[i].credyt.percent);
+		printf("\n2. ліміт до %d тис. грн.\n", bank[i].credyt.limit);
+		printf("\n\nякий пункт хочете змінити? (0 - назад) -> "); scanf_s("%d", &answ3);
+		switch (answ3)
+		{
+		case 1:
+			printf("\nпроцентна ставка на рік: ");
+			scanf_s("%f", &bank[i].credyt.percent); break;
+		case 2:
+			printf("\nліміти кредиту до (тис. грн.): ");
+			scanf_s("%d", &bank[i].credyt.limit); break;
+		case 0:
+			system("cls");
+			red(i); break;
+		}break;
+	case 9:
+		system("cls");
+		int answ2;
+		printf("КУРС ВАЛЮТ");
+		printf("\nкупівля: \tпродаж:");
+		printf("\n%.2f$ \t\t%.2f$", bank[i].valuta.dollarBuy, bank[i].valuta.dollarSell);
+		printf("\n%.2f€ \t\t%.2f€", bank[i].valuta.euroBuy, bank[i].valuta.euroSell);
+		printf("\n\nяку валюту хочете змінити?\n1. долар\n2. євро\n0. повернутись\n-> "); scanf_s("%d", &answ2);
+		switch (answ2)
+		{
+		case 1:
+			printf("\nкупівля: ");
+			scanf_s("%f", &bank[i].valuta.dollarBuy);
+			printf("продаж: ");
+			scanf_s("%f", &bank[i].valuta.dollarSell); break;
+		case 2:
+			printf("\nкупівля: ");
+			scanf_s("%f", &bank[i].valuta.euroBuy);
+			printf("продаж: ");
+			scanf_s("%f", &bank[i].valuta.euroSell); break;
+		case 0:
+			system("cls");
+			red(i); break;
+		}break;
+	case 0: edit(); break;
+	}
+}
+void info(int i)
+{
+	printf("\n\nБАНК %d..............................................................", i + 1);
+	printf("\nназва: %s ", bank[i].name);
+	printf("\nмісто: %s ", bank[i].city);
+	printf("\nадреса: %s ", bank[i].address);
+	printf("\nстатус: %s ", bank[i].status);
+	printf("\nкод за ЄДРПОУ: %s", bank[i].code);
+	printf("\nкод ID НБУ: %s", bank[i].ID);
+	printf("\n\nДЕПОЗИТ");
+	printf("\n- на 3 місяці: %.1f ", bank[i].depozyt.depozyt3);
+	printf("\n- на 6 місяці: %.1f ", bank[i].depozyt.depozyt6);
+	printf("\n- на 12 місяці: %.1f \n", bank[i].depozyt.depozyt12);
+	printf("\nКРЕДИТ");
+	printf("\nпроцентна ставка на рік: %.1f ", bank[i].credyt.percent);
+	printf("\nліміт до %d тис. грн.\n", bank[i].credyt.limit);
+
+	printf("\nКУРС ВАЛЮТ");
+	printf("\nкупівля: \tпродаж:");
+	printf("\n%.2f$ \t\t%.2f$", bank[i].valuta.dollarBuy, bank[i].valuta.dollarSell);
+	printf("\n%.2f€ \t\t%.2f€", bank[i].valuta.euroBuy, bank[i].valuta.euroSell);
+	printf("\n.......................................................................\n\n");
+}
+void sheet()
+{
+	up();
+	for (int i = 0; i < N; i++)
+	{
+		if (i < 9)
+		{
+			printf("\n\t|%d. %-15s |%-15s|%-25s|%-15s|%-10s|%-8.1f|%-8.1f|%6.2f$|%5.2f$|%6.2f€|%5.2f€|", i + 1, bank[i].name, bank[i].city, bank[i].address, bank[i].status, bank[i].code,
+				bank[i].depozyt.depozyt12, bank[i].credyt.percent, bank[i].valuta.dollarBuy, bank[i].valuta.dollarSell, bank[i].valuta.euroBuy, bank[i].valuta.euroSell);
+			printf("\n\t|___________________|_______________|_________________________|_______________|__________|________|________|_______|______|_______|______|");
+		}
+		else
+		{
+			printf("\n\t|%d. %-15s|%-15s|%-25s|%-15s|%-10s|%-8.1f|%-8.1f|%6.2f$|%5.2f$|%6.2f€|%5.2f€|", i + 1, bank[i].name, bank[i].city, bank[i].address, bank[i].status, bank[i].code,
+				bank[i].depozyt.depozyt12, bank[i].credyt.percent, bank[i].valuta.dollarBuy, bank[i].valuta.dollarSell, bank[i].valuta.euroBuy, bank[i].valuta.euroSell);
+			printf("\n\t|___________________|_______________|_________________________|_______________|__________|________|________|_______|______|_______|______|");
+		}
+	}
+
+}
+void up()
+{
+	printf("\n\t__________________________________________________________________________________________________________________________________________");
+	printf("\n\t|%-19s|%-15s|%-25s|%-15s|%-10s|%-8s|%-8s|%-14s|%-14s|", " ", " ", " ", " ", " ", " ", " ", "КУРС ДОЛАРА", "КУРС ЄВРО");
+	printf("\n\t|%-19s|%-15s|%-25s|%-15s|%-10s|%-8s|%-8s|______________|______________|", "№. НАЗВА", "МІСТО", "АДРЕСА", "СТАТУС", "КОД ЄДРПОУ", "ДЕПОЗИТ", "КРЕДИТ");
+	printf("\n\t|%-19s|%-15s|%-25s|%-15s|%-10s|%-8s|%-8s|%-7s|%-6s|%-7s|%-6s|", " ", " ", " ", " ", " ", "(річний)", "(річний)", "купівля", "продаж", "купівля", "продаж");
+	printf("\n\t|___________________|_______________|_________________________|_______________|__________|________|________|_______|______|_______|______|");
+}
+void details()
+{
+	int detail;
+	do {
+		printf("\n\tдетальніше про банк за номером (0 - назад до меню) -> "); scanf_s("%d", &detail);
+		for (int i = 0; i < N; i++)
+		{
+			if (detail == i + 1)
+			{
+				info(i);
+			}
+		}
+	} while (detail != 0);
+}
+void delet()
+{
+	system("cls");
+	sheet();
+	DATA();
+	int del, answ4;
+	printf("\n\tвидалити запис за номером (0 - головне меню) -> "); scanf_s("%d", &del);
+	if (del != 0)
+	{
+		info(del - 1);
+		printf("ви впевнені що хочете видалити цей запис? (1 - так, 0 - назад) -> "); scanf_s("%d", &answ4);
+		if (answ4 == 1)
+		{
+			for (int i = del - 1; i < N - 1; i++)
+			{
+				memcpy(&bank[i], &bank[i + 1], sizeof(BANK));
+			}
+			N--;
+			inFile("d:\\text\\txt.bin");
+			system("cls");
+			MENU();
+		}
+		else delet();
+	}
+	else
+	{
+		system("cls");
+		MENU();
+	}
+}
+void DATA()
+{
+	int day = 6;
+	int month = 2;
+	int year = 2024;
+	printf("\n\tінформація станом на %d.%d.%d", day, month, year);
+}
+void sort()
+{
+	system("cls");
+	printf("--- << СОРТУВАННЯ >> ---");
+	printf("\n------------------------");
+	printf("\n   1. назвою");
+	printf("\n   2. містом");
+	printf("\n   3. курсом долара");
+	printf("\n   4. курсом євро");
+	printf("\n   0. вихід");
+	printf("\n------------------------");
+	int sortMenu;
+	printf("\n-> "); scanf_s("%d", &sortMenu);
+	if (sortMenu == 0)
+	{
+		system("cls");
+		MENU();
+	}
+	else
+	{
+		switch (sortMenu)
+		{
+		case 1:
+			for (int j = 0; j < N; j++)
+				for (int i = 0; i < N - 1; i++)
+					if (strcmp(bank[i].name, bank[i + 1].name) > 0)
+					{
+						elementSort(i);
+					} break;
+		case 2:
+			for (int j = 0; j < N; j++)
+				for (int i = 0; i < N - 1; i++)
+					if (strcmp(bank[i].city, bank[i + 1].city) > 0)
+					{
+						elementSort(i);
+					} break;
+		case 3:
+			for (int j = 0; j < N; j++)
+				for (int i = 0; i < N - 1; i++)
+					if (bank[i].valuta.dollarBuy > bank[i + 1].valuta.dollarBuy)
+					{
+						elementSort(i);
+					} break;
+		case 4:
+			for (int j = 0; j < N; j++)
+				for (int i = 0; i < N - 1; i++)
+					if (bank[i].valuta.euroBuy > bank[i + 1].valuta.euroBuy)
+					{
+						elementSort(i);
+					} break;
+		}
+		sheet();
+		details();
+		sort();
+	}
+}
+void elementSort(int i)
+{
+	char tmp[100];
+	float money;
+	int lim;
+
+	strcpy(tmp, bank[i + 1].name);
+	strcpy(bank[i + 1].name, bank[i].name);
+	strcpy(bank[i].name, tmp);
+
+	strcpy(tmp, bank[i + 1].city);
+	strcpy(bank[i + 1].city, bank[i].city);
+	strcpy(bank[i].city, tmp);
+
+	strcpy(tmp, bank[i + 1].address);
+	strcpy(bank[i + 1].address, bank[i].address);
+	strcpy(bank[i].address, tmp);
+
+	strcpy(tmp, bank[i + 1].status);
+	strcpy(bank[i + 1].status, bank[i].status);
+	strcpy(bank[i].status, tmp);
+
+	strcpy(tmp, bank[i + 1].code);
+	strcpy(bank[i + 1].code, bank[i].code);
+	strcpy(bank[i].code, tmp);
+
+	strcpy(tmp, bank[i + 1].ID);
+	strcpy(bank[i + 1].ID, bank[i].ID);
+	strcpy(bank[i].ID, tmp);
+
+	money = bank[i + 1].depozyt.depozyt3;
+	bank[i + 1].depozyt.depozyt3 = bank[i].depozyt.depozyt3;
+	bank[i].depozyt.depozyt3 = money;
+
+	money = bank[i + 1].depozyt.depozyt6;
+	bank[i + 1].depozyt.depozyt6 = bank[i].depozyt.depozyt6;
+	bank[i].depozyt.depozyt6 = money;
+
+	money = bank[i + 1].depozyt.depozyt12;
+	bank[i + 1].depozyt.depozyt12 = bank[i].depozyt.depozyt12;
+	bank[i].depozyt.depozyt12 = money;
+
+	money = bank[i + 1].credyt.percent;
+	bank[i + 1].credyt.percent = bank[i].credyt.percent;
+	bank[i].credyt.percent = money;
+
+	lim = bank[i + 1].credyt.limit;
+	bank[i + 1].credyt.limit = bank[i].credyt.limit;
+	bank[i].credyt.limit = lim;
+
+	money = bank[i + 1].valuta.dollarBuy;
+	bank[i + 1].valuta.dollarBuy = bank[i].valuta.dollarBuy;
+	bank[i].valuta.dollarBuy = money;
+
+	money = bank[i + 1].valuta.dollarSell;
+	bank[i + 1].valuta.dollarSell = bank[i].valuta.dollarSell;
+	bank[i].valuta.dollarSell = money;
+
+	money = bank[i + 1].valuta.euroBuy;
+	bank[i + 1].valuta.euroBuy = bank[i].valuta.euroBuy;
+	bank[i].valuta.euroBuy = money;
+
+	money = bank[i + 1].valuta.euroSell;
+	bank[i + 1].valuta.euroSell = bank[i].valuta.euroSell;
+	bank[i].valuta.euroSell = money;
+}
